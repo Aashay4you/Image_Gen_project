@@ -1,11 +1,9 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { User, Mail, Calendar, Image, CreditCard } from "lucide-react";
 import Navigation from "@/components/Navigation";
-
 const Profile = () => {
   // Mock user data - will be replaced with Supabase auth data
   const userData = {
@@ -17,9 +15,7 @@ const Profile = () => {
     plan: "Pro",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+  return <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <Navigation />
       
       <div className="container mx-auto px-6 py-8">
@@ -112,7 +108,7 @@ const Profile = () => {
                   <Button className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
                     Upgrade Plan
                   </Button>
-                  <Button variant="outline" className="flex-1 border-white/30 text-white hover:bg-white/10">
+                  <Button variant="outline" className="flex-1 border-white/30 text-white bg-pink-600 hover:bg-pink-500">
                     Buy More Credits
                   </Button>
                 </div>
@@ -141,8 +137,6 @@ const Profile = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Profile;
