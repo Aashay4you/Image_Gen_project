@@ -1,23 +1,30 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Zap, Palette, Download } from "lucide-react";
+import { ArrowRight, Zap, Palette, Download, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import Navigation from "@/components/Navigation";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle('dark');
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className={`min-h-screen transition-all duration-500 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900' : 'bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900'}`}>
       {/* Navigation */}
       <Navigation />
       
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-pink-600/20 to-blue-600/20"></div>
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"></div>
+        <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-br from-purple-600/10 via-pink-600/10 to-blue-600/10' : 'bg-gradient-to-br from-purple-600/20 via-pink-600/20 to-blue-600/20'}`}></div>
+        <div className={`absolute top-1/4 left-1/4 w-96 h-96 ${isDarkMode ? 'bg-purple-500/5' : 'bg-purple-500/10'} rounded-full blur-3xl`}></div>
+        <div className={`absolute bottom-1/4 right-1/4 w-96 h-96 ${isDarkMode ? 'bg-pink-500/5' : 'bg-pink-500/10'} rounded-full blur-3xl`}></div>
         
         <div className="relative container mx-auto px-6 py-20 lg:py-32">
           <div className="text-center space-y-8">
@@ -55,7 +62,7 @@ const Index = () => {
               
               <Button
                 variant="outline"
-                className="border-white/30 text-white hover:bg-white/10 px-8 py-6 text-lg rounded-xl backdrop-blur-sm"
+                className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white border-0 px-8 py-6 text-lg rounded-xl shadow-2xl transform hover:scale-105 transition-all duration-300"
                 size="lg"
               >
                 View Gallery
@@ -66,7 +73,7 @@ const Index = () => {
       </div>
       
       {/* Features Section */}
-      <div className="py-20 bg-gradient-to-b from-transparent to-black/20">
+      <div className={`py-20 ${isDarkMode ? 'bg-gradient-to-b from-transparent to-black/40' : 'bg-gradient-to-b from-transparent to-black/20'}`}>
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
@@ -105,6 +112,17 @@ const Index = () => {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Theme Toggle Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          onClick={toggleTheme}
+          className={`w-14 h-14 rounded-full ${isDarkMode ? 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600' : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700'} text-white shadow-2xl transform hover:scale-110 transition-all duration-300`}
+          size="icon"
+        >
+          {isDarkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+        </Button>
       </div>
     </div>
   );

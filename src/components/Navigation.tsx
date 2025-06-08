@@ -22,10 +22,10 @@ const Navigation = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div 
-            className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+            className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity group"
             onClick={() => navigate("/")}
           >
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+            <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg group-hover:scale-110 transition-transform duration-300">
               <Palette className="w-6 h-6 text-white" />
             </div>
             <span className="text-xl font-bold text-white">ImageGen</span>
@@ -58,7 +58,7 @@ const Navigation = () => {
             ) : (
               <Button
                 onClick={() => navigate("/auth")}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl transform hover:scale-105 transition-all duration-300 shadow-lg"
               >
                 <LogIn className="w-4 h-4 mr-2" />
                 Sign In
