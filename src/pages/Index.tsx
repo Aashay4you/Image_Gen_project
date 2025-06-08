@@ -32,7 +32,7 @@ const Index = () => {
             {/* Main Headline */}
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight">
               Generate Stunning
-              <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent italic animate-pulse hover:scale-110 transition-all duration-100 cursor-default">
+              <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent italic animate-pulse hover:scale-110 transition-all duration-20 cursor-default">
                 AI Images
               </span>
               in Seconds
