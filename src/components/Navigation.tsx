@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
-import { Palette, User, LogIn } from "lucide-react";
+import { Palette, User, LogIn, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,9 +13,16 @@ import {
 
 const Navigation = () => {
   const navigate = useNavigate();
-  
-  // Mock user state - will be replaced with Supabase auth
-  const isLoggedIn = false;
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   return (
     <nav className="relative z-50 bg-white/5 backdrop-blur-lg border-b border-white/10">
@@ -33,7 +41,7 @@ const Navigation = () => {
           
           {/* Navigation Actions */}
           <div className="flex items-center space-x-4">
-            {isLoggedIn ? (
+            {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full p-2">
@@ -50,7 +58,8 @@ const Navigation = () => {
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-gray-700" />
-                  <DropdownMenuItem className="hover:bg-gray-800">
+                  <DropdownMenuItem onClick={handleSignOut} className="hover:bg-gray-800">
+                    <LogOut className="w-4 h-4 mr-2" />
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
