@@ -7,21 +7,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// HARDCODED KEYS FOR TESTING (do not keep in production)
+const REPLICATE_API_TOKEN = "r8_TjUAdhk2fqj0ggYZ3cCQ5ZQGkblC74g2I0KHz"
+const SUPABASE_URL = "https://qoanwvlidmsmiriiiwkl.supabase.co"
+const SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFvYW53dmxpZG1zbWlyaWlpd2tsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTM2NTU0MCwiZXhwIjoyMDY0OTQxNTQwfQ.exy8zyQitQy2rTq270FRcWruEuLoZXhX4I3IkCyRlk8"
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // ✅ Safely load token with fallback for testing
-    const REPLICATE_API_TOKEN = Deno.env.get('REPLICATE_API_TOKEN') || "r8_TjUAdhk2fqj0ggYZ3cCQ5ZQGkblC74g2I0KHz"
-    if (!REPLICATE_API_TOKEN || !REPLICATE_API_TOKEN.startsWith('r8_')) {
-      throw new Error('REPLICATE_API_TOKEN is not set or invalid')
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
@@ -122,9 +119,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-image function:', error)
-    return new Response(JSON.stringify({ 
-      error: 'Failed to generate image', 
-      details: error.message 
+    return new Response(JSON.stringify({
+      error: 'Failed to generate image',
+      details: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
