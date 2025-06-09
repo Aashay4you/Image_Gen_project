@@ -62,7 +62,7 @@ const ImageGallery = () => {
             <p className="text-sm mt-2">Your created images will appear here</p>
           </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   );
 };
