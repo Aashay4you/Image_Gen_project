@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Palette, Wand2, Download, Share2 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import ImageGallery from "@/components/ImageGallery";
+import InsufficientCreditsModal from "@/components/InsufficientCreditsModal";
 import { useImageGeneration } from "@/hooks/useImageGeneration";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +14,7 @@ import { useEffect } from "react";
 
 const Dashboard = () => {
   const [prompt, setPrompt] = useState("");
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
   const { generateImage, isGenerating, generatedImage, setGeneratedImage } = useImageGeneration();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -35,7 +37,9 @@ const Dashboard = () => {
 
   const handleGenerate = async () => {
     const result = await generateImage(prompt);
-    if (result) {
+    if (result?.insufficientCredits) {
+      setShowCreditsModal(true);
+    } else if (result) {
       // Clear the prompt after successful generation
       setPrompt("");
     }
@@ -175,6 +179,11 @@ const Dashboard = () => {
           <ImageGallery />
         </div>
       </div>
+
+      <InsufficientCreditsModal 
+        open={showCreditsModal} 
+        onOpenChange={setShowCreditsModal} 
+      />
     </div>
   );
 };

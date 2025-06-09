@@ -2,11 +2,13 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCredits } from '@/hooks/useCredits';
 
 export const useImageGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
+  const { refreshCredits } = useCredits();
 
   const generateImage = async (prompt: string) => {
     if (!prompt.trim()) {
@@ -38,10 +40,14 @@ export const useImageGeneration = () => {
       }
 
       if (data.error) {
+        if (data.error === 'Insufficient credits') {
+          return { insufficientCredits: true };
+        }
         throw new Error(data.error);
       }
 
       setGeneratedImage(data.image.url);
+      refreshCredits(); // Refresh credits after successful generation
       
       toast({
         title: "Success!",

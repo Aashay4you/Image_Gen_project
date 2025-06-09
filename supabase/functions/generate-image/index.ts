@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Replicate from "https://esm.sh/replicate@0.25.2"
@@ -7,18 +8,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// HARDCODED KEYS FOR TESTING (do not keep in production)
-const REPLICATE_API_TOKEN = "r8_TjUAdhk2fqj0ggYZ3cCQ5ZQGkblC74g2I0KHz"
-const SUPABASE_URL = "https://qoanwvlidmsmiriiiwkl.supabase.co"
-const SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFvYW53dmxpZG1zbWlyaWlpd2tsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTM2NTU0MCwiZXhwIjoyMDY0OTQxNTQwfQ.exy8zyQitQy2rTq270FRcWruEuLoZXhX4I3IkCyRlk8"
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    // Create Supabase clients
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    
+    // Client for authentication
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey)
+    // Client for admin operations
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
@@ -28,10 +32,32 @@ serve(async (req) => {
       })
     }
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(authHeader.replace('Bearer ', ''))
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Invalid user' }), {
         status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Check user's credits
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('credits')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError) {
+      console.error('Profile error:', profileError)
+      return new Response(JSON.stringify({ error: 'Failed to fetch user profile' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    if (!profile || profile.credits <= 0) {
+      return new Response(JSON.stringify({ error: 'Insufficient credits' }), {
+        status: 402,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
@@ -46,8 +72,16 @@ serve(async (req) => {
 
     console.log('Generating image with prompt:', prompt)
 
+    const replicateToken = Deno.env.get('REPLICATE_API_TOKEN')
+    if (!replicateToken) {
+      return new Response(JSON.stringify({ error: 'Replicate API token not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     const replicate = new Replicate({
-      auth: REPLICATE_API_TOKEN,
+      auth: replicateToken,
     })
 
     const output = await replicate.run("black-forest-labs/flux-schnell", {
@@ -72,7 +106,7 @@ serve(async (req) => {
 
     const fileName = `${user.id}/${Date.now()}.webp`
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from('generated-images')
       .upload(fileName, imageBuffer, {
         contentType: 'image/webp',
@@ -84,11 +118,21 @@ serve(async (req) => {
       throw new Error(`Failed to upload image: ${uploadError.message}`)
     }
 
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = supabaseAdmin.storage
       .from('generated-images')
       .getPublicUrl(fileName)
 
-    const { data: dbData, error: dbError } = await supabase
+    // Deduct credit
+    const { error: creditError } = await supabaseAdmin
+      .from('profiles')
+      .update({ credits: profile.credits - 1 })
+      .eq('id', user.id)
+
+    if (creditError) {
+      console.error('Credit deduction error:', creditError)
+    }
+
+    const { data: dbData, error: dbError } = await supabaseAdmin
       .from('generated_images')
       .insert({
         user_id: user.id,
@@ -112,7 +156,8 @@ serve(async (req) => {
         id: dbData.id,
         url: publicUrl,
         prompt: prompt
-      }
+      },
+      remainingCredits: profile.credits - 1
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
