@@ -6,22 +6,67 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Palette, Wand2, Download, Share2 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import ImageGallery from "@/components/ImageGallery";
+import { useImageGeneration } from "@/hooks/useImageGeneration";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const Dashboard = () => {
   const [prompt, setPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const { generateImage, isGenerating, generatedImage, setGeneratedImage } = useImageGeneration();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="text-white">Loading...</div>
+    </div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
-    
-    setIsGenerating(true);
-    
-    // Simulate API call - will be replaced with actual AI generation
-    setTimeout(() => {
-      setGeneratedImage("https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=512&h=512&fit=crop");
-      setIsGenerating(false);
-    }, 3000);
+    const result = await generateImage(prompt);
+    if (result) {
+      // Clear the prompt after successful generation
+      setPrompt("");
+    }
+  };
+
+  const handleDownload = async () => {
+    if (generatedImage) {
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `generated-image-${Date.now()}.webp`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleShare = async () => {
+    if (generatedImage && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Generated AI Image',
+          url: generatedImage,
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+      }
+    }
   };
 
   return (
@@ -103,11 +148,11 @@ const Dashboard = () => {
                       className="w-full h-full object-cover rounded-xl"
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center space-x-4">
-                      <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+                      <Button size="sm" onClick={handleDownload} className="bg-white/20 hover:bg-white/30 text-white">
                         <Download className="w-4 h-4 mr-1" />
                         Download
                       </Button>
-                      <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+                      <Button size="sm" onClick={handleShare} className="bg-white/20 hover:bg-white/30 text-white">
                         <Share2 className="w-4 h-4 mr-1" />
                         Share
                       </Button>
