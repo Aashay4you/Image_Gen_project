@@ -23,13 +23,7 @@ serve(async (req) => {
       })
     }
 
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
-    if (!stripeSecretKey) {
-      return new Response(JSON.stringify({ error: 'Stripe secret key not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
+    const stripeSecretKey = 'sk_test_51RXwitRrhZZQxgVPoS0CCwdrRnVYNhpUKBMAJ2ZAfr5nw1zV8bpmRp3xMPfWvpe6NDTTSK0KYp1ZR6O0cdi3c8Om00b9zw5BBf'
 
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2023-10-16",

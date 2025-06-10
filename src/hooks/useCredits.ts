@@ -26,6 +26,7 @@ export const useCredits = () => {
         console.error('Error fetching credits:', error);
         setCredits(0);
       } else {
+        // Handle the case where credits might not exist yet
         setCredits(data?.credits || 0);
       }
     } catch (error) {

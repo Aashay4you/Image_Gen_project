@@ -16,14 +16,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
-
-    if (!stripeSecretKey) {
-      return new Response(JSON.stringify({ error: 'Stripe secret key not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
+    const stripeSecretKey = 'sk_test_51RXwitRrhZZQxgVPoS0CCwdrRnVYNhpUKBMAJ2ZAfr5nw1zV8bpmRp3xMPfWvpe6NDTTSK0KYp1ZR6O0cdi3c8Om00b9zw5BBf'
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
@@ -63,13 +56,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price_data: {
-            currency: "usd",
-            product_data: { 
-              name: "10 Image Generation Credits" 
-            },
-            unit_amount: 999, // $9.99 in cents
-          },
+          price: 'price_1RXwu6RrhZZQxgVPPuwmVLGf',
           quantity: 1,
         },
       ],
