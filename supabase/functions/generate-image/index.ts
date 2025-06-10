@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Replicate from "https://esm.sh/replicate@0.25.2"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -72,34 +71,97 @@ serve(async (req) => {
 
     console.log('Generating image with prompt:', prompt)
 
-    const replicateToken = Deno.env.get('REPLICATE_API_TOKEN')
-    if (!replicateToken) {
-      return new Response(JSON.stringify({ error: 'Replicate API token not configured' }), {
+    const falKey = Deno.env.get('FAL_KEY')
+    if (!falKey) {
+      return new Response(JSON.stringify({ error: 'FAL API key not configured' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    const replicate = new Replicate({
-      auth: replicateToken,
+    // Make request to Fal.ai API
+    const falResponse = await fetch('https://queue.fal.run/fal-ai/flux/schnell', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${falKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        input: {
+          prompt: prompt,
+          image_size: "square_hd",
+          num_inference_steps: 4,
+          num_images: 1,
+          enable_safety_checker: true
+        }
+      })
     })
 
-    const output = await replicate.run("black-forest-labs/flux-schnell", {
-      input: {
-        prompt: prompt,
-        go_fast: true,
-        megapixels: "1",
-        num_outputs: 1,
-        aspect_ratio: "1:1",
-        output_format: "webp",
-        output_quality: 80,
-        num_inference_steps: 4
+    if (!falResponse.ok) {
+      const errorText = await falResponse.text()
+      console.error('Fal.ai API error:', errorText)
+      throw new Error(`Fal.ai API error: ${falResponse.status} ${errorText}`)
+    }
+
+    const falData = await falResponse.json()
+    console.log('Fal.ai response:', falData)
+
+    // Get the request ID for polling
+    const requestId = falData.request_id
+    if (!requestId) {
+      throw new Error('No request ID returned from Fal.ai')
+    }
+
+    // Poll for completion
+    let result
+    let attempts = 0
+    const maxAttempts = 60 // 5 minutes max wait time (5 second intervals)
+
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
+      
+      const statusResponse = await fetch(`https://queue.fal.run/fal-ai/flux/schnell/requests/${requestId}/status`, {
+        headers: {
+          'Authorization': `Key ${falKey}`,
+        }
+      })
+
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json()
+        console.log('Status check:', statusData)
+
+        if (statusData.status === 'COMPLETED') {
+          // Get the final result
+          const resultResponse = await fetch(`https://queue.fal.run/fal-ai/flux/schnell/requests/${requestId}`, {
+            headers: {
+              'Authorization': `Key ${falKey}`,
+            }
+          })
+          
+          if (resultResponse.ok) {
+            result = await resultResponse.json()
+            break
+          }
+        } else if (statusData.status === 'FAILED') {
+          throw new Error('Image generation failed')
+        }
       }
-    })
+      
+      attempts++
+    }
 
-    console.log('Generated image:', output)
+    if (!result) {
+      throw new Error('Image generation timed out')
+    }
 
-    const imageUrl = Array.isArray(output) ? output[0] : output
+    const imageUrl = result.images?.[0]?.url
+    if (!imageUrl) {
+      throw new Error('No image URL in response')
+    }
+
+    console.log('Generated image URL:', imageUrl)
+
+    // Download and store the image
     const imageResponse = await fetch(imageUrl)
     const imageBlob = await imageResponse.blob()
     const imageBuffer = await imageBlob.arrayBuffer()
