@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -61,15 +62,21 @@ serve(async (req) => {
       })
     }
 
-    const { prompt } = await req.json()
-    if (!prompt) {
-      return new Response(JSON.stringify({ error: 'Prompt is required' }), {
+    // Parse and validate the request body
+    const requestBody = await req.json()
+    console.log('Request body received:', requestBody)
+    
+    const { prompt } = requestBody
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+      console.error('Invalid prompt received:', prompt)
+      return new Response(JSON.stringify({ error: 'Prompt is required and must be a non-empty string' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    console.log('Generating image with prompt:', prompt)
+    const cleanPrompt = prompt.trim()
+    console.log('Generating image with prompt:', cleanPrompt)
 
     const falKey = Deno.env.get('FAL_KEY')
     if (!falKey) {
@@ -79,6 +86,19 @@ serve(async (req) => {
       })
     }
 
+    // Prepare the request payload for Fal.ai
+    const falPayload = {
+      input: {
+        prompt: cleanPrompt,
+        image_size: "square_hd",
+        num_inference_steps: 4,
+        num_images: 1,
+        enable_safety_checker: true
+      }
+    }
+
+    console.log('Sending to Fal.ai:', JSON.stringify(falPayload, null, 2))
+
     // Make request to Fal.ai API
     const falResponse = await fetch('https://queue.fal.run/fal-ai/flux/schnell', {
       method: 'POST',
@@ -86,15 +106,7 @@ serve(async (req) => {
         'Authorization': `Key ${falKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        input: {
-          prompt: prompt,
-          image_size: "square_hd",
-          num_inference_steps: 4,
-          num_images: 1,
-          enable_safety_checker: true
-        }
-      })
+      body: JSON.stringify(falPayload)
     })
 
     if (!falResponse.ok) {
@@ -198,7 +210,7 @@ serve(async (req) => {
       .from('generated_images')
       .insert({
         user_id: user.id,
-        prompt: prompt,
+        prompt: cleanPrompt,
         image_url: publicUrl,
         storage_path: fileName
       })
@@ -217,7 +229,7 @@ serve(async (req) => {
       image: {
         id: dbData.id,
         url: publicUrl,
-        prompt: prompt
+        prompt: cleanPrompt
       },
       remainingCredits: profile.credits - 1
     }), {
@@ -235,3 +247,4 @@ serve(async (req) => {
     })
   }
 })
+
