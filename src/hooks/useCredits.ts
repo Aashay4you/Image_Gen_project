@@ -18,7 +18,7 @@ export const useCredits = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('credits')
         .eq('id', user.id)
         .single();
 
@@ -26,8 +26,8 @@ export const useCredits = () => {
         console.error('Error fetching credits:', error);
         setCredits(0);
       } else {
-        // Handle the case where credits might not exist yet or be null
-        setCredits((data as any)?.credits || 0);
+        // Now that credits column exists, we can access it directly
+        setCredits(data?.credits || 0);
       }
     } catch (error) {
       console.error('Error fetching credits:', error);
