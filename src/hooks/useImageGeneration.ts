@@ -21,12 +21,15 @@ export const useImageGeneration = () => {
     }
 
     setIsGenerating(true);
+    setGeneratedImage(null); // Clear previous image
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Not authenticated');
       }
+
+      console.log('Starting image generation with prompt:', prompt);
 
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: { prompt },
@@ -35,34 +38,48 @@ export const useImageGeneration = () => {
         },
       });
 
+      console.log('Edge function response:', data);
+
       if (error) {
+        console.error('Supabase function error:', error);
         throw error;
       }
 
-      if (data.error) {
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
         if (data.error === 'Insufficient credits') {
           return { insufficientCredits: true };
         }
         throw new Error(data.error);
       }
 
-      setGeneratedImage(data.image.url);
-      refreshCredits(); // Refresh credits after successful generation
-      
-      toast({
-        title: "Success!",
-        description: "Your image has been generated successfully",
-      });
+      if (data?.success && data?.image?.url) {
+        console.log('Image generated successfully:', data.image.url);
+        setGeneratedImage(data.image.url);
+        refreshCredits(); // Refresh credits after successful generation
+        
+        toast({
+          title: "Success!",
+          description: "Your image has been generated successfully",
+        });
 
-      return data.image;
+        return data.image;
+      } else {
+        console.error('Unexpected response format:', data);
+        throw new Error('Invalid response format from server');
+      }
 
     } catch (error) {
       console.error('Error generating image:', error);
+      const errorMessage = error?.message || 'Failed to generate image';
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to generate image",
+        description: errorMessage,
         variant: "destructive",
       });
+
+      throw error;
     } finally {
       setIsGenerating(false);
     }

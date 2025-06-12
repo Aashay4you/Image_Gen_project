@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Palette, Wand2, Download, Share2 } from "lucide-react";
+import { Palette, Wand2, Download, Share2, AlertCircle } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import ImageGallery from "@/components/ImageGallery";
 import InsufficientCreditsModal from "@/components/InsufficientCreditsModal";
@@ -15,6 +15,7 @@ import { useEffect } from "react";
 const Dashboard = () => {
   const [prompt, setPrompt] = useState("");
   const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { generateImage, isGenerating, generatedImage, setGeneratedImage } = useImageGeneration();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -36,27 +37,38 @@ const Dashboard = () => {
   }
 
   const handleGenerate = async () => {
-    const result = await generateImage(prompt);
-    if (result?.insufficientCredits) {
-      setShowCreditsModal(true);
-    } else if (result) {
-      // Clear the prompt after successful generation
-      setPrompt("");
+    setError(null);
+    
+    try {
+      const result = await generateImage(prompt);
+      if (result?.insufficientCredits) {
+        setShowCreditsModal(true);
+      } else if (result) {
+        // Clear the prompt after successful generation
+        setPrompt("");
+      }
+    } catch (error) {
+      console.error('Generation failed:', error);
+      setError(error?.message || 'Failed to generate image');
     }
   };
 
   const handleDownload = async () => {
     if (generatedImage) {
-      const response = await fetch(generatedImage);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `generated-image-${Date.now()}.webp`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      try {
+        const response = await fetch(generatedImage);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `generated-image-${Date.now()}.webp`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Download failed:', error);
+      }
     }
   };
 
@@ -107,6 +119,13 @@ const Dashboard = () => {
                 />
               </div>
               
+              {error && (
+                <div className="flex items-center space-x-2 text-red-400 bg-red-900/20 p-3 rounded-lg">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+              
               <Button
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || isGenerating}
@@ -150,6 +169,13 @@ const Dashboard = () => {
                       src={generatedImage}
                       alt="Generated AI Image"
                       className="w-full h-full object-cover rounded-xl"
+                      onError={(e) => {
+                        console.error('Image failed to load:', generatedImage);
+                        setError('Failed to load generated image');
+                      }}
+                      onLoad={() => {
+                        console.log('Image loaded successfully:', generatedImage);
+                      }}
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center space-x-4">
                       <Button size="sm" onClick={handleDownload} className="bg-white/20 hover:bg-white/30 text-white">

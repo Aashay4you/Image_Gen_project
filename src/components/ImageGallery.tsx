@@ -1,10 +1,20 @@
 
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUserImages } from "@/hooks/useUserImages";
 import { Loader2 } from "lucide-react";
 
 const ImageGallery = () => {
-  const { data: images, isLoading, error } = useUserImages();
+  const { data: images, isLoading, error, refetch } = useUserImages();
+
+  // Refresh gallery every 30 seconds to catch new images
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      refetch();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [refetch]);
 
   if (isLoading) {
     return (
@@ -52,6 +62,9 @@ const ImageGallery = () => {
                   alt={`Generated: ${image.prompt}`}
                   className="w-full h-full object-cover"
                   loading="lazy"
+                  onError={(e) => {
+                    console.error('Gallery image failed to load:', image.image_url);
+                  }}
                 />
               </div>
             ))}
