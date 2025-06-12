@@ -1,5 +1,4 @@
 
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -118,63 +117,69 @@ serve(async (req) => {
     const falData = await falResponse.json()
     console.log('Fal.ai response:', falData)
 
-    // Get the request ID for polling
-    const requestId = falData.request_id
-    if (!requestId) {
-      throw new Error('No request ID returned from Fal.ai')
-    }
-
-    // Poll for completion
-    let result
-    let attempts = 0
-    const maxAttempts = 60 // 5 minutes max wait time (5 second intervals)
-
-    while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
+    // Check if we got direct result or need to poll
+    let imageUrl
+    if (falData.images && falData.images.length > 0) {
+      // Direct response with images
+      imageUrl = falData.images[0].url
+      console.log('Direct image URL received:', imageUrl)
+    } else if (falData.request_id) {
+      // Need to poll for completion
+      console.log('Polling for completion with request ID:', falData.request_id)
       
-      const statusResponse = await fetch(`https://queue.fal.run/fal-ai/flux/schnell/requests/${requestId}/status`, {
-        headers: {
-          'Authorization': `Key ${falKey}`,
-        }
-      })
+      let result
+      let attempts = 0
+      const maxAttempts = 60 // 5 minutes max wait time
 
-      if (statusResponse.ok) {
-        const statusData = await statusResponse.json()
-        console.log('Status check:', statusData)
-
-        if (statusData.status === 'COMPLETED') {
-          // Get the final result
-          const resultResponse = await fetch(`https://queue.fal.run/fal-ai/flux/schnell/requests/${requestId}`, {
-            headers: {
-              'Authorization': `Key ${falKey}`,
-            }
-          })
-          
-          if (resultResponse.ok) {
-            result = await resultResponse.json()
-            break
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
+        
+        const statusResponse = await fetch(`https://queue.fal.run/fal-ai/flux/schnell/requests/${falData.request_id}/status`, {
+          headers: {
+            'Authorization': `Key ${falKey}`,
           }
-        } else if (statusData.status === 'FAILED') {
-          throw new Error('Image generation failed')
+        })
+
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json()
+          console.log('Status check:', statusData)
+
+          if (statusData.status === 'COMPLETED') {
+            // Get the final result
+            const resultResponse = await fetch(`https://queue.fal.run/fal-ai/flux/schnell/requests/${falData.request_id}`, {
+              headers: {
+                'Authorization': `Key ${falKey}`,
+              }
+            })
+            
+            if (resultResponse.ok) {
+              result = await resultResponse.json()
+              imageUrl = result.images?.[0]?.url
+              break
+            }
+          } else if (statusData.status === 'FAILED') {
+            throw new Error('Image generation failed')
+          }
         }
+        
+        attempts++
       }
-      
-      attempts++
+
+      if (!imageUrl) {
+        throw new Error('Image generation timed out or failed')
+      }
+    } else {
+      throw new Error('Unexpected response format from Fal.ai')
     }
 
-    if (!result) {
-      throw new Error('Image generation timed out')
-    }
-
-    const imageUrl = result.images?.[0]?.url
-    if (!imageUrl) {
-      throw new Error('No image URL in response')
-    }
-
-    console.log('Generated image URL:', imageUrl)
+    console.log('Final image URL:', imageUrl)
 
     // Download and store the image
     const imageResponse = await fetch(imageUrl)
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to download image: ${imageResponse.status}`)
+    }
+    
     const imageBlob = await imageResponse.blob()
     const imageBuffer = await imageBlob.arrayBuffer()
 
@@ -247,4 +252,3 @@ serve(async (req) => {
     })
   }
 })
-
