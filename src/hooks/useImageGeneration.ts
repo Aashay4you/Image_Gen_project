@@ -39,10 +39,11 @@ export const useImageGeneration = () => {
       });
 
       console.log('Edge function response:', data);
+      console.log('Edge function error:', error);
 
       if (error) {
         console.error('Supabase function error:', error);
-        throw error;
+        throw new Error(error.message || 'Failed to call edge function');
       }
 
       if (data?.error) {
