@@ -32,8 +32,8 @@ const InsufficientCreditsModal = ({ open, onOpenChange }: InsufficientCreditsMod
           </p>
           <div className="bg-gray-800 p-4 rounded-lg">
             <h3 className="font-semibold text-yellow-500 mb-2">Credit Package</h3>
-            <p className="text-2xl font-bold">10 Credits - $9.99</p>
-            <p className="text-sm text-gray-400">Generate 10 AI images</p>
+            <p className="text-2xl font-bold">3 Credits - $2.99</p>
+            <p className="text-sm text-gray-400">Generate 3 AI images</p>
           </div>
           <div className="flex gap-3">
             <Button
