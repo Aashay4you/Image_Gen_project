@@ -1,73 +1,141 @@
-# Welcome to your Lovable project
+# 🖼️ AI Image Generation Platform
 
-## Project info
+A full-stack image generation web application using:
 
-**URL**: https://lovable.dev/projects/4676a682-d0c7-43e3-ad63-a7d9fa4c6460
+- **Supabase** (Authentication, Database, and Storage)
+- **Fal Flux Schnell API** (AI Image Generation)
+- **Vercel** (Frontend Hosting & Deployment)
 
-## How can I edit this code?
+👉 **Live Deployment:**  
+[https://image-gen-project-red.vercel.app/](https://image-gen-project-red.vercel.app/)
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## 🚀 Project Overview
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/4676a682-d0c7-43e3-ad63-a7d9fa4c6460) and start prompting.
+This platform allows users to:
 
-Changes made via Lovable will be committed automatically to this repo.
+- ✅ Sign up and log in securely using **Supabase Auth**
+- ✅ Generate AI-powered images using **Fal.ai's Flux Schnell API**
+- ✅ Automatically store generated images inside **Supabase Storage**
+- ✅ Maintain user profiles with credit-based image generation limits
+- ✅ Store metadata: `user_id`, `prompt`, `generated_image_url`, and storage path in Supabase DB
 
-**Use your preferred IDE**
+> **Note:**  
+The **Dashboard module** is currently under development.  
+Other core functionalities are fully operational.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🏗️ Tech Stack
 
-Follow these steps:
+| Layer       | Technology Used               |
+|-------------|---------------------------------|
+| **Frontend**  | Next.js / React / Tailwind (hosted on Vercel) |
+| **Backend**   | Edge Functions on Deno (Supabase Functions)   |
+| **Auth**       | Supabase Auth (JWT-based)     |
+| **Database**   | Supabase Postgres (Table-based credit system) |
+| **Storage**    | Supabase Storage (Image hosting) |
+| **AI Model**   | Fal.ai Flux Schnell API        |
+| **Deployment** | Vercel (CI/CD & hosting)      |
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🔐 Authentication & Credit System
 
-# Step 3: Install the necessary dependencies.
-npm i
+- Each user is assigned a limited number of **credits** upon sign-up.
+- Credits are deducted for every successful image generation.
+- The user profile table stores:
+  - `id` (UUID)
+  - `email`
+  - `credits`
+- If credits run out, the generation is blocked until refilled.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+---
 
-**Edit a file directly in GitHub**
+## 📸 Image Generation Flow
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. User submits a **prompt**.
+2. Request is sent to **Fal.ai Flux Schnell API** with proper parameters.
+3. Once generated:
+   - The image URL is fetched.
+   - Image is uploaded into **Supabase Storage**.
+   - Metadata (prompt, image URL, storage path, user ID) is inserted into `generated_images` table.
+   - Credit is deducted automatically.
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🌐 Deployment & Hosting
 
-## What technologies are used for this project?
+- The frontend is deployed on **Vercel**:  
+  👉 [https://image-gen-project-red.vercel.app/](https://image-gen-project-red.vercel.app/)
 
-This project is built with:
+- Backend functions run on **Supabase Edge Functions** using **Deno runtime**.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 🔧 Environment Variables Required
 
-Simply open [Lovable](https://lovable.dev/projects/4676a682-d0c7-43e3-ad63-a7d9fa4c6460) and click on Share -> Publish.
+You must configure the following environment variables in both Supabase and Vercel:
 
-## Can I connect a custom domain to my Lovable project?
+| Variable | Description |
+|----------|-------------|
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anonymous public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
+| `FAL_KEY` | Your Fal.ai API key |
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🗄️ Database Schema (Supabase)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### `profiles` table
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID (Primary Key) | Supabase user ID |
+| email | Text | User email |
+| credits | Integer | Remaining credits |
+
+### `generated_images` table
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID (Primary Key) | Auto-generated |
+| user_id | UUID | Linked user ID |
+| prompt | Text | User's input prompt |
+| image_url | Text | Public URL of stored image |
+| storage_path | Text | Internal Supabase Storage path |
+| created_at | Timestamp | Generated time |
+
+---
+
+## 📝 Roadmap (Next Phase)
+
+- ✅ Credit deduction system (Done)
+- 🚧 Admin Dashboard (In Progress)
+- 🚧 Credit refill / purchase flow
+- 🚧 User gallery UI
+- 🚧 Delete old images
+- 🚧 Analytics
+
+---
+
+## 🤝 Contributions
+
+- Pull requests are welcome.
+- For major changes, please open an issue first to discuss proposed updates.
+
+---
+
+## 📄 License
+
+This project is licensed under MIT License.
+
+---
+
+## 🙏 Special Thanks
+
+- [Supabase](https://supabase.com/)
+- [Fal.ai](https://fal.ai/)
+- [Vercel](https://vercel.com/)
