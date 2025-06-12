@@ -22,7 +22,7 @@ This platform allows users to:
 - ✅ Store metadata: `user_id`, `prompt`, `generated_image_url`, and storage path in Supabase DB
 
 > **Note:**  
-The **Dashboard module** is currently under development.  
+The **Profile module** is currently under development.  
 Other core functionalities are fully operational.
 
 ---
