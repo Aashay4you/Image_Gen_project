@@ -1,6 +1,5 @@
-
 import { Button } from "@/components/ui/button";
-import { Palette, User, LogIn, LogOut, Coins } from "lucide-react";
+import { Palette, User, LogIn, LogOut, Coins, Image } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCredits } from "@/hooks/useCredits";
@@ -41,6 +40,20 @@ const Navigation = () => {
             <span className="text-xl font-bold text-white">ImageGen</span>
           </div>
           
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center space-x-6">
+            {user && (
+              <Button
+                variant="ghost"
+                onClick={() => navigate("/gallery")}
+                className="text-white hover:bg-white/10 flex items-center space-x-2"
+              >
+                <Image className="w-4 h-4" />
+                <span>Gallery</span>
+              </Button>
+            )}
+          </div>
+          
           {/* Navigation Actions */}
           <div className="flex items-center space-x-4">
             {user ? (
@@ -64,6 +77,10 @@ const Navigation = () => {
                   <DropdownMenuContent className="w-56 bg-gray-900/95 backdrop-blur border-gray-700 text-white">
                     <DropdownMenuItem onClick={() => navigate("/dashboard")} className="hover:bg-gray-800">
                       Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/gallery")} className="hover:bg-gray-800 md:hidden">
+                      <Image className="w-4 h-4 mr-2" />
+                      Gallery
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/profile")} className="hover:bg-gray-800">
                       Profile
